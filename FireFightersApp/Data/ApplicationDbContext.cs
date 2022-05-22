@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using FireFightersApp.Models;
 
 namespace FireFightersApp.Data
 {
@@ -9,5 +10,6 @@ namespace FireFightersApp.Data
             : base(options)
         {
         }
+        public DbSet<FireFightersApp.Models.Call>? Call { get; set; }
     }
 }
