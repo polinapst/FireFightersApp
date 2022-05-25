@@ -7,35 +7,41 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using FireFightersApp.Data;
 using FireFightersApp.Models;
+using Microsoft.AspNetCore.Authorization;
+using FireFightersApp.Controllers;
+using Microsoft.AspNetCore.Identity;
 
 namespace FireFightersApp.Views.Calls
 {
-    public class CallsController : Controller
+    public class CallsController : DI_BaseController
     {
-        private readonly ApplicationDbContext _context;
-
-        public CallsController(ApplicationDbContext context)
+        public CallsController(
+            ApplicationDbContext context,
+            IAuthorizationService authorizationService,
+            UserManager<IdentityUser> userManager)
+            : base(context, authorizationService, userManager)
         {
-            _context = context;
+            
         }
 
         // GET: Calls
+        [AllowAnonymous]
         public async Task<IActionResult> Index()
         {
-              return _context.Call != null ? 
-                          View(await _context.Call.ToListAsync()) :
+              return Context.Call != null ? 
+                          View(await Context.Call.ToListAsync()) :
                           Problem("Entity set 'ApplicationDbContext.Call'  is null.");
         }
 
         // GET: Calls/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null || _context.Call == null)
+            if (id == null || Context.Call == null)
             {
                 return NotFound();
             }
 
-            var call = await _context.Call
+            var call = await Context.Call
                 .FirstOrDefaultAsync(m => m.CallId == id);
             if (call == null)
             {
@@ -60,8 +66,8 @@ namespace FireFightersApp.Views.Calls
         {
             if (ModelState.IsValid)
             {
-                _context.Add(call);
-                await _context.SaveChangesAsync();
+                Context.Add(call);
+                await Context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
             return View(call);
@@ -70,12 +76,12 @@ namespace FireFightersApp.Views.Calls
         // GET: Calls/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null || _context.Call == null)
+            if (id == null || Context.Call == null)
             {
                 return NotFound();
             }
 
-            var call = await _context.Call.FindAsync(id);
+            var call = await Context.Call.FindAsync(id);
             if (call == null)
             {
                 return NotFound();
@@ -99,8 +105,8 @@ namespace FireFightersApp.Views.Calls
             {
                 try
                 {
-                    _context.Update(call);
-                    await _context.SaveChangesAsync();
+                    Context.Update(call);
+                    await Context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -121,12 +127,12 @@ namespace FireFightersApp.Views.Calls
         // GET: Calls/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null || _context.Call == null)
+            if (id == null || Context.Call == null)
             {
                 return NotFound();
             }
 
-            var call = await _context.Call
+            var call = await Context.Call
                 .FirstOrDefaultAsync(m => m.CallId == id);
             if (call == null)
             {
@@ -141,23 +147,23 @@ namespace FireFightersApp.Views.Calls
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            if (_context.Call == null)
+            if (Context.Call == null)
             {
                 return Problem("Entity set 'ApplicationDbContext.Call'  is null.");
             }
-            var call = await _context.Call.FindAsync(id);
+            var call = await Context.Call.FindAsync(id);
             if (call != null)
             {
-                _context.Call.Remove(call);
+                Context.Call.Remove(call);
             }
             
-            await _context.SaveChangesAsync();
+            await Context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
         private bool CallExists(int id)
         {
-          return (_context.Call?.Any(e => e.CallId == id)).GetValueOrDefault();
+          return (Context.Call?.Any(e => e.CallId == id)).GetValueOrDefault();
         }
     }
 }

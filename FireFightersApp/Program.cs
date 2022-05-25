@@ -2,6 +2,7 @@ using FireFightersApp.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using FireFightersApp.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +35,8 @@ builder.Services.AddAuthorization(options =>
         .RequireAuthenticatedUser()
         .Build();
 });
+
+builder.Services.AddScoped<IAuthorizationHandler, CallerAuthorizationHandler>();
 
 var app = builder.Build();
 
