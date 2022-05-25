@@ -10,6 +10,7 @@ using FireFightersApp.Models;
 using Microsoft.AspNetCore.Authorization;
 using FireFightersApp.Controllers;
 using Microsoft.AspNetCore.Identity;
+using FireFightersApp.Authorization;
 
 namespace FireFightersApp.Views.Calls
 {
@@ -64,13 +65,20 @@ namespace FireFightersApp.Views.Calls
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("CallId,CallerId,Address,CallDatetime,IsCompleted")] Call call)
         {
-            if (ModelState.IsValid)
+            call.CallerId = UserManager.GetUserId(User);
+            call.CallDatetime = DateTime.Now;
+
+            var isAuthorized = await AuthorizationService.AuthorizeAsync(User, call, CallOperations.Create);
+
+            if (!isAuthorized.Succeeded)
             {
-                Context.Add(call);
-                await Context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                return Forbid();
             }
-            return View(call);
+            
+            Context.Add(call);
+            await Context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: Calls/Edit/5
@@ -86,6 +94,14 @@ namespace FireFightersApp.Views.Calls
             {
                 return NotFound();
             }
+
+            var isAuthorized = await AuthorizationService.AuthorizeAsync(User, call, CallOperations.Update);
+
+            if (!isAuthorized.Succeeded)
+            {
+                return Forbid();
+            }
+
             return View(call);
         }
 
@@ -99,6 +115,22 @@ namespace FireFightersApp.Views.Calls
             if (id != call.CallId)
             {
                 return NotFound();
+            }
+
+            var callTemp = await Context.Call.AsNoTracking().SingleOrDefaultAsync(m => m.CallId == id);
+
+            if (callTemp == null)
+            {
+                return NotFound();
+            }
+
+            call.CallerId = callTemp.CallerId;
+
+            var isAuthorized = await AuthorizationService.AuthorizeAsync(User, call, CallOperations.Update);
+
+            if (!isAuthorized.Succeeded)
+            {
+                return Forbid();
             }
 
             if (ModelState.IsValid)

@@ -7,7 +7,7 @@
         public string Address { get; set; }
         public DateTime CallDatetime { get; set; }
         public CallStatus Status { get; set; }
-        public string Responsible { get; set; }
+        public string? Responsible { get; set; }
     }
 
     public enum CallStatus
