@@ -29,6 +29,20 @@ namespace FireFightersApp.Views.Calls
         [AllowAnonymous]
         public async Task<IActionResult> Index()
         {
+            var calls = from i in Context.Call select i;
+            
+            var isDispatcher = User.IsInRole(Constants.CallDispatcherRole);
+            var isAdmin = User.IsInRole(Constants.CallAdminRole);
+
+            var currentUserId = UserManager.GetUserId(User);
+
+            if (!isDispatcher && !isAdmin)
+            {
+                return Context.Call != null ?
+                          View(await Context.Call.Where(i => i.CallerId == currentUserId).ToListAsync()) :
+                          Problem("Entity set 'ApplicationDbContext.Call'  is null.");
+            }
+
               return Context.Call != null ? 
                           View(await Context.Call.ToListAsync()) :
                           Problem("Entity set 'ApplicationDbContext.Call'  is null.");
@@ -49,7 +63,45 @@ namespace FireFightersApp.Views.Calls
                 return NotFound();
             }
 
+            var isCreator = await AuthorizationService.AuthorizeAsync(User, call, CallOperations.Read);
+
+            var isDispatcher = User.IsInRole(Constants.CallDispatcherRole);
+
+            if (!isCreator.Succeeded && !isDispatcher)
+            {
+                return Forbid();
+            }
+
             return View(call);
+        }
+
+        
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Details(int id, CallStatus status)
+        {
+            Call call = await Context.Call.FindAsync(id);
+
+            if (call == null)
+            {
+                return NotFound();
+            }
+
+            var callOperation = status == CallStatus.Assigned ? CallOperations.Assigned : CallOperations.Completed;
+
+            var isAuthorized = await AuthorizationService.AuthorizeAsync(User, call, callOperation);
+
+            if (!isAuthorized.Succeeded)
+            {
+                return Forbid();
+            }
+
+            call.Status = status;
+            Context.Call.Update(call);
+
+            await Context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: Calls/Create
@@ -171,6 +223,13 @@ namespace FireFightersApp.Views.Calls
                 return NotFound();
             }
 
+            var isAuthorized = await AuthorizationService.AuthorizeAsync(User, call, CallOperations.Delete);
+
+            if (!isAuthorized.Succeeded)
+            {
+                return Forbid();
+            }
+
             return View(call);
         }
 
@@ -184,11 +243,20 @@ namespace FireFightersApp.Views.Calls
                 return Problem("Entity set 'ApplicationDbContext.Call'  is null.");
             }
             var call = await Context.Call.FindAsync(id);
-            if (call != null)
+
+            if (call == null)
             {
-                Context.Call.Remove(call);
+                return NotFound();
             }
-            
+
+            var isAuthorized = await AuthorizationService.AuthorizeAsync(User, call, CallOperations.Delete);
+
+            if (!isAuthorized.Succeeded)
+            {
+                return Forbid();
+            }
+
+            Context.Call.Remove(call);            
             await Context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }

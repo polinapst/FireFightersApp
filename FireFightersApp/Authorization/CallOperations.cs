@@ -27,5 +27,8 @@ namespace FireFightersApp.Authorization
 
         public static readonly string AssignedOperationName = "Assigned";
         public static readonly string CompletedOperationName = "Completed";
+
+        public static readonly string CallDispatcherRole = "CallDispatcher";
+        public static readonly string CallAdminRole = "CallAdmin";
     }
 }

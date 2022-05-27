@@ -37,8 +37,16 @@ builder.Services.AddAuthorization(options =>
 });
 
 builder.Services.AddScoped<IAuthorizationHandler, CallerAuthorizationHandler>();
+builder.Services.AddSingleton<IAuthorizationHandler, CallDispatcherAuthorizationHandler>();
+builder.Services.AddSingleton<IAuthorizationHandler, CallAdminAuthorizationHandler>();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    await SeedData.Initialize(services);
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
